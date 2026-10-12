@@ -8,6 +8,11 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "Only 64-bit builds are supported!")
 endif()
 
-add_executable(ml-chess-engine
-    src/main.cpp
-)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+enable_testing()
+
+add_subdirectory(modules/chess)
+add_subdirectory(src)
