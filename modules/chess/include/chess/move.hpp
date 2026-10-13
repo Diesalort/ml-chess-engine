@@ -10,7 +10,7 @@
 /*
  * 
  * ==============================
- *  MODIFICATION ADVERTISEMENT
+ *  NOTICE OF MODIFICATION
  * ==============================
  * 
  * Code extracted from: https://github.com/LauraWangQiu/AlphaDeepChess
