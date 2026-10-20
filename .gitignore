@@ -279,3 +279,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ========== Chess data files ==========
+
+# Raw PGN / compressed sources (.zst)
+data/raw/*
+
+# Processed binary datasets
+data/processed/*
+
+# Keep empty folders
+!data/raw/.gitkeep
+!data/processed/.gitkeep
