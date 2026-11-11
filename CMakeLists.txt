@@ -43,4 +43,5 @@ enable_testing()
 
 add_subdirectory(test_utils)
 add_subdirectory(modules/chess)
+add_subdirectory(modules/nn)
 add_subdirectory(src)
