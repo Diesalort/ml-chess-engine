@@ -41,5 +41,6 @@ endif()
 
 enable_testing()
 
+add_subdirectory(test_utils)
 add_subdirectory(modules/chess)
 add_subdirectory(src)
