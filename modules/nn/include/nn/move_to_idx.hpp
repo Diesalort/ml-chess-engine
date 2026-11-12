@@ -74,11 +74,12 @@ public:
      */
     static inline int uci_move_to_idx(std::string_view uci_move, bool black_to_move)
     {
-        assert(uci_move.size() >= 4 && uci_move.size() <= 5);
-        assert(uci_move[0] >= 'a' && uci_move[0] <= 'h');
-        assert(uci_move[1] >= '1' && uci_move[1] <= '8');
-        assert(uci_move[2] >= 'a' && uci_move[2] <= 'h');
-        assert(uci_move[3] >= '1' && uci_move[3] <= '8');
+        if (uci_move.size() < 4 || uci_move.size() > 5) return -1;
+
+        if (uci_move[0] < 'a' || uci_move[0] > 'h' || uci_move[1] < '1' || uci_move[1] > '8' || uci_move[2] < 'a' ||
+            uci_move[2] > 'h' || uci_move[3] < '1' || uci_move[3] > '8') {
+            return -1;
+        }
 
         uint8_t col_from = uci_move[0] - 'a';
         uint8_t row_from = uci_move[1] - '1';
@@ -88,14 +89,22 @@ public:
         uint8_t sq_from = row_from * 8 + col_from;
         uint8_t sq_to = row_to * 8 + col_to;
 
-        int promotion_type = 0;       // Nothing or Queen
+        if (sq_from == sq_to) return -1;
+
+        uint8_t promotion_type = 0;   // Nothing or Queen
         if (uci_move.size() == 5) {   // There is a promotion
+            uint8_t expected_row_from = black_to_move ? 1 : 6;
+            uint8_t expected_row_to = black_to_move ? 0 : 7;
+            if (row_from != expected_row_from || row_to != expected_row_to) {
+                return -1;
+            }
+
             switch (uci_move[4]) {
             case 'q': promotion_type = 0; break;
             case 'n': promotion_type = 1; break;
             case 'b': promotion_type = 2; break;
             case 'r': promotion_type = 3; break;
-            default: assert(false && "Invalid promotion piece in UCI string");
+            default: return -1;
             }
         }
 
@@ -144,7 +153,7 @@ private:
             }
         }
 
-        // Queen-type movements (this include rook's and bishop's moves)
+        // Queen-type moves (this includes rook and bishop moves)
         for (int from = 0; from < 64; from++) {
 
             int row_from = from / 8;
