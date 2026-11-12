@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+#include <vector>
 #include "nn/move_to_idx.hpp"
 #include "test_utils.hpp"
 
@@ -7,6 +9,7 @@ static void move_to_idx_promotion_test();
 static void move_to_idx_castling_test();
 static void move_to_idx_symmetry_test();
 static void move_to_idx_uci_test();
+static void move_to_idx_indices_test();
 
 void move_to_idx_test()
 {
@@ -18,6 +21,7 @@ void move_to_idx_test()
     move_to_idx_symmetry_test();
     move_to_idx_castling_test();
     move_to_idx_uci_test();
+    move_to_idx_indices_test();
 }
 
 static void move_to_idx_normal_test()
@@ -50,7 +54,7 @@ static void move_to_idx_normal_test()
         PRINT_TEST_FAILED(test_name, "MoveToIdx::move_to_idx(Move(A1, B2), false) != 8");
     }
 
-    // From A1 there are 23 valid movements [0-22], so B1 must start at index 23
+    // From A1 there are 23 valid moves [0-22], so B1 must start at index 23
     // B1 to A1, eighth registered move
     Move b1a1(Square::B1, Square::A1);
     if (MoveToIdx::move_to_idx(b1a1, false) != 23) {
@@ -75,7 +79,7 @@ static void move_to_idx_normal_test()
                           "MoveToIdx::move_to_idx(Move(C3, B5), false) == MoveToIdx::move_to_idx(Move(F5, C8), false)");
     }
 
-    // Invalid movement, must return -1
+    // Invalid move, must return -1
     Move a1b4(Square::A1, Square::B4);
     if (MoveToIdx::move_to_idx(a1b4, false) != -1) {
         PRINT_TEST_FAILED(test_name, "MoveToIdx::move_to_idx(a1b4, false) != -1");
@@ -97,7 +101,7 @@ static void move_to_idx_promotion_test()
     int idx_promo_bishop = MoveToIdx::move_to_idx(promotion_bishop, false);
     int idx_promo_rook = MoveToIdx::move_to_idx(promotion_rook, false);
 
-    // All index must be within the range [0, 1857]
+    // All indices must be within the range [0, 1857]
     if (idx_promo_queen < 0 || idx_promo_queen >= 1858) {
         PRINT_TEST_FAILED(test_name, "Move(A7, A8) with queen promotion out of bounds");
     }
@@ -114,21 +118,21 @@ static void move_to_idx_promotion_test()
         PRINT_TEST_FAILED(test_name, "Move(A7, A8) with rook promotion out of bounds");
     }
 
-    // promotion_queen must have the same index than a normal move
+    // promotion_queen must have the same index as a normal move
     Move normal_move = Move(Square::A7, Square::A8, MoveType::NORMAL);
     int idx_normal_move = MoveToIdx::move_to_idx(normal_move, false);
     if (idx_promo_queen != idx_normal_move) {
         PRINT_TEST_FAILED(test_name, "Move(A7, A8) with and without promotion to queen has different index");
     }
 
-    // All the promotion index must be different
+    // All promotion indices must be different
     if (idx_promo_queen == idx_promo_knight || idx_promo_queen == idx_promo_bishop ||
         idx_promo_queen == idx_promo_rook || idx_promo_knight == idx_promo_bishop ||
         idx_promo_knight == idx_promo_rook || idx_promo_bishop == idx_promo_rook) {
         PRINT_TEST_FAILED(test_name, "The indices for different promotions are not different");
     }
 
-    // Symmetry in promotions of white and black pieces must have the same index
+    // Symmetric promotions must have the same index
     Move white_promotion(Square::D7, Square::E8, MoveType::PROMOTION, PieceType::ROOK);
     Move black_promotion(Square::D2, Square::E1, MoveType::PROMOTION, PieceType::ROOK);
 
@@ -154,10 +158,16 @@ static void move_to_idx_castling_test()
         PRINT_TEST_FAILED(test_name, "Move::castle_white_queen() out of range [0, 1857]");
     }
 
-    // castle_black_king() must have same idx than castle_white_king because of symmetry
+    // castle_black_king() must have the same idx as castle_white_king because of symmetry
     int bk_castling_idx = MoveToIdx::move_to_idx(Move::castle_black_king(), true);
     if (wk_castling_idx != bk_castling_idx) {
         PRINT_TEST_FAILED(test_name, "Move::castle_white_king() != Move::castle_black_king()");
+    }
+
+    // castle_black_queen() must have the same idx as castle_white_queen because of symmetry
+    int bq_castling_idx = MoveToIdx::move_to_idx(Move::castle_black_queen(), true);
+    if (wq_castling_idx != bq_castling_idx) {
+        PRINT_TEST_FAILED(test_name, "Move::castle_white_queen() != Move::castle_black_queen()");
     }
 }
 
@@ -218,5 +228,89 @@ static void move_to_idx_uci_test()
     if (MoveToIdx::move_to_idx(d8e6, true) != MoveToIdx::uci_move_to_idx("d8e6", true)) {
         PRINT_TEST_FAILED(test_name,
                           "MoveToIdx::move_to_idx(d8e6, true) != MoveToIdx::uci_move_to_idx(\"d8e6\", true)");
+    }
+
+    // Invalid UCI
+    if (MoveToIdx::uci_move_to_idx("e2", false) != -1) {
+        PRINT_TEST_FAILED(test_name, "MoveToIdx::uci_move_to_idx(\"e2\", false) != -1");
+    }
+
+    // from == to
+    if (MoveToIdx::uci_move_to_idx("e2e2", false) != -1) {
+        PRINT_TEST_FAILED(test_name, "MoveToIdx::uci_move_to_idx(\"e2e2\", false) != -1");
+    }
+
+    // Out of bounds
+    if (MoveToIdx::uci_move_to_idx("e2e9", false) != -1) {
+        PRINT_TEST_FAILED(test_name, "MoveToIdx::uci_move_to_idx(\"e2e9\", false) != -1");
+    }
+
+    // Invalid promotion row
+    if (MoveToIdx::uci_move_to_idx("e2e4q", false) != -1) {
+        PRINT_TEST_FAILED(test_name, "MoveToIdx::uci_move_to_idx(\"e2e4q\", false) != -1");
+    }
+
+    // Invalid promotion piece
+    if (MoveToIdx::uci_move_to_idx("e7e8k", false) != -1) {
+        PRINT_TEST_FAILED(test_name, "MoveToIdx::uci_move_to_idx(\"e7e8k\", false) != -1");
+    }
+}
+
+static void move_to_idx_indices_test()
+{
+
+    const std::string test_name = "move_to_idx_indices_test";
+
+    std::vector<bool> visits(1858, false);
+    int idx_count = 0;
+
+    for (int from = 0; from < 64; from++) {
+        for (int to = 0; to < 64; to++) {
+
+            if (from == to) continue;
+
+            int idx = MoveToIdx::move_to_idx(from, to, 0, false);
+
+            if (idx < -1 || idx >= 1858) {
+                PRINT_TEST_FAILED(test_name, "idx out of bounds: " + std::to_string(idx));
+                continue;
+            }
+
+            if (idx >= 0) {
+                if (visits[idx]) PRINT_TEST_FAILED(test_name, "collision at index: " + std::to_string(idx));
+                visits[idx] = true;
+                idx_count++;
+            }
+        }
+    }
+
+    // Underpromotions (from row 6 to 7)
+    for (int col_from = 0; col_from < 8; col_from++) {
+        for (int col_to = 0; col_to < 8; col_to++) {
+            int from = 6 * 8 + col_from;   // from square
+            int to = 7 * 8 + col_to;       // to square
+
+            int distance = std::abs(col_to - col_from);
+            if (distance != 0 && distance != 1) continue;   // Impossible pawn move
+
+            for (int k = 1; k <= 3; k++) {   // for possible promotions
+
+                int idx = MoveToIdx::move_to_idx(from, to, k, false);
+
+                if (idx < 0 || idx >= 1858) {
+                    PRINT_TEST_FAILED(test_name, "underpromotion idx out of bounds: " + std::to_string(idx));
+                    continue;
+                }
+
+                if (visits[idx]) PRINT_TEST_FAILED(test_name, "collision at index: " + std::to_string(idx));
+                visits[idx] = true;
+                idx_count++;
+            }
+        }
+    }
+
+    if (idx_count != 1858) PRINT_TEST_FAILED(test_name, "idx_count != 1858: " + std::to_string(idx_count));
+    for (int i = 0; i < 1858; i++) {
+        if (!visits[i]) PRINT_TEST_FAILED(test_name, "Unused idx: " + std::to_string(i));
     }
 }
