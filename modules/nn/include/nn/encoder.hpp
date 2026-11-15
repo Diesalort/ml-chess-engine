@@ -8,9 +8,10 @@ class Encoder
 {
 public:
     /**
-     * Encode the Board 'board' state in a TrainingSample structure.
+     * Encodes the board state into a TrainingSample structure.
      */
-    static inline TrainingSample encode_board(Board const& board, Move const& chosen_move, int16_t white_result)
+    static inline TrainingSample encode_board(Board const& board, Move const& chosen_move, int16_t white_result,
+                                              int16_t stm_eval_cp)
     {
         assert(white_result >= -1 && white_result <= 1);
 
@@ -65,16 +66,16 @@ public:
         // 4. Fifty-move rule
         ts.rule50 = std::min<uint8_t>(state.fifty_move_rule_counter(), 100U);
 
-        // 5. Side to move
-        ts.side_to_move = black_turn ? 1U : 0U;
+        // 5. Game result
+        ts.game_result = black_turn ? -white_result : white_result;
 
-        // 6. Best move idx [0,1857] for Policy head
+        // 6. Best move idx [0, 1857] for Policy head
         int move_idx = MoveToIdx::move_to_idx(chosen_move, black_turn);
         assert(move_idx >= 0 && move_idx <= 1857);
         ts.best_move_idx = static_cast<uint16_t>(move_idx);
 
-        // 7. Evaluation of the position for Value head
-        ts.value_position = black_turn ? -white_result : white_result;
+        // 7. Evaluation of the position in centipawns for Value head
+        ts.stm_eval_cp = stm_eval_cp;
 
         return ts;
     }

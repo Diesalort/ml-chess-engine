@@ -28,8 +28,8 @@ static void encoder_symmetry_test()
     board_b.load_fen(StartFEN_B);
     Move move_b(Square::E7, Square::E5);
 
-    TrainingSample ts_w = Encoder::encode_board(board_w, move_w, 1);
-    TrainingSample ts_b = Encoder::encode_board(board_b, move_b, -1);
+    TrainingSample ts_w = Encoder::encode_board(board_w, move_w, 1, 35);
+    TrainingSample ts_b = Encoder::encode_board(board_b, move_b, -1, 35);
 
     // 1. Bitboards
     for (int i = 0; i < 12; i++) {
@@ -54,9 +54,9 @@ static void encoder_symmetry_test()
         PRINT_TEST_FAILED(test_name, "rule50 != 0");
     }
 
-    // 5. Side to move
-    if (ts_w.side_to_move != 0 || ts_b.side_to_move != 1) {
-        PRINT_TEST_FAILED(test_name, "side_to_move is wrong");
+    // 5. Game Result
+    if (ts_w.game_result != 1 || ts_b.game_result != 1) {
+        PRINT_TEST_FAILED(test_name, "Game result is wrong");
     }
 
     // 6. best_move_idx
@@ -64,8 +64,8 @@ static void encoder_symmetry_test()
         PRINT_TEST_FAILED(test_name, "best_move_idx mismatch between White and Black");
     }
 
-    // 7. Value position
-    if (ts_w.value_position != 1 || ts_b.value_position != 1) {
-        PRINT_TEST_FAILED(test_name, "value_position != +1 for winning side to move");
+    // 7. Evaluation of the positions in centipawns
+    if (ts_w.stm_eval_cp != 35 || ts_b.stm_eval_cp != 35) {
+        PRINT_TEST_FAILED(test_name, "stm_eval_cp != 35");
     }
 }

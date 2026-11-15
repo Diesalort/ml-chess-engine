@@ -2,22 +2,18 @@
 
 #include <cstdint>
 
-#pragma pack(push, 1)
-
-// TODO Stockfish evaluation for value_position (Phase 2)
-
 struct TrainingSample
 {
     /**
-     * 0...5: Player's turn pieces (P, N, B, R, Q, K)
+     * 0...5: Side to move's pieces (P, N, B, R, Q, K)
      * 6...11: Opponent's pieces (p, n, b, r, q, k)
      */
     uint64_t bitboards[12];
 
     /**
      * Castlings:
-     * bit 0: Player's turn short castling
-     * bit 1: Player's turn long castling
+     * bit 0: Side to move's short castling
+     * bit 1: Side to move's long castling
      * bit 2: Opponent's short castling
      * bit 3: Opponent's long castling
      */
@@ -26,7 +22,7 @@ struct TrainingSample
     /**
      * En passant square:
      * 0...63 if there is
-     * 64 if there is not 
+     * 64 if none 
      */
     uint8_t en_passant_square;
 
@@ -34,26 +30,18 @@ struct TrainingSample
     uint8_t rule50;
 
     /**
-     * Side to move:
-     * 0: white
-     * 1: black
+     * Final result of the match:
+     *    - +1: Side to move wins
+     *    - -1: Side to move loses
+     *    -  0: Draw
      */
-    uint8_t side_to_move;
+    int8_t game_result;
 
-    // Label from 0...1857 for Policy head
+    // Best move encoded in the range [0, 1857] for Policy head
     uint16_t best_move_idx;
 
-    /**
-     * Evaluation of the position for Value head.
-     * Phase 1:
-     *    - +1: Game favorable to player's turn
-     *    - -1: Game favorable to opponent
-     *    -  0: Game favorable to draw
-     * Phase 2: Stockfish evaluation
-     */
-    int16_t value_position;
+    // Side to move evaluation of the position in centipawns for Value head.
+    int16_t stm_eval_cp;
 };
 
-#pragma pack(pop)
-
-static_assert(sizeof(TrainingSample) == 104, "The size of trainingSample struct must be 104 bytes.");
+static_assert(sizeof(TrainingSample) == 104, "TrainingSample struct size must be 104 bytes.");
