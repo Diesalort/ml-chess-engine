@@ -8,6 +8,8 @@
 class MoveToIdx
 {
 public:
+    MoveToIdx() = delete;
+
     /**
      * Convert a Move object to its corresponding index [0, 1857].
      */

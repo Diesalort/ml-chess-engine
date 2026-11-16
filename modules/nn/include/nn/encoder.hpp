@@ -7,6 +7,8 @@
 class Encoder
 {
 public:
+    Encoder() = delete;
+
     /**
      * Encodes the board state into a TrainingSample structure.
      */
