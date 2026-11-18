@@ -9,3 +9,5 @@ target_link_libraries(pgn_parser PUBLIC
    chess
    nn
 )
+
+add_subdirectory(tests)

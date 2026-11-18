@@ -14,7 +14,7 @@ Move SanParser::san_to_move(Board& board, std::string_view san)
     }
 
     // Kingside castling ("O-O")
-    if (san == "O-O") {
+    if (san == "O-O" || san == "0-0") {
         MoveList legal_moves;
         generate_legal_moves<ALL_MOVES>(legal_moves, board);
         for (const Move& move : legal_moves) {
@@ -26,7 +26,7 @@ Move SanParser::san_to_move(Board& board, std::string_view san)
     }
 
     // Queenside castling ("O-O-O")
-    if (san == "O-O-O") {
+    if (san == "O-O-O" || san == "0-0-0") {
         MoveList legal_moves;
         generate_legal_moves<ALL_MOVES>(legal_moves, board);
         for (const Move& move : legal_moves) {
@@ -91,12 +91,18 @@ Move SanParser::san_to_move(Board& board, std::string_view san)
     // Disambiguation
     int disambig_col = -1;
     int disambig_row = -1;
+
+    if (san.size() > 2) return Move();
     for (char c : san) {
-        if (c >= 'a' && c <= 'h') disambig_col = c - 'a';
-        else if (c >= '1' && c <= '8')
+        if (c >= 'a' && c <= 'h' && disambig_col == -1 && disambig_row == -1) disambig_col = c - 'a';
+        else if (c >= '1' && c <= '8' && disambig_row == -1)
             disambig_row = c - '1';
         else
             return Move();
+    }
+
+    if (moving_piece_type == PieceType::PAWN && capture && disambig_col == -1) {
+        return Move();
     }
 
     // Match with a legal move
@@ -111,9 +117,15 @@ Move SanParser::san_to_move(Board& board, std::string_view san)
         generate_legal_moves<ALL_MOVES>(legal_moves, board);
     }
 
-    uint64_t expected_bb = board.get_bitboard_piece(expected_piece);
+    const uint64_t expected_bb = board.get_bitboard_piece(expected_piece);
+    Move matched_move;
     for (const Move& move : legal_moves) {
         if (move.square_to() != sq_to) continue;
+
+        // Verify if it is a capture
+        const bool is_move_capture = !board.is_empty(sq_to) || move.type() == MoveType::EN_PASSANT;
+        if (is_move_capture != capture) continue;
+
 
         if (promo_piece != PieceType::EMPTY) {
             if (move.type() != MoveType::PROMOTION || move.promotion_piece() != promo_piece) continue;
@@ -126,9 +138,14 @@ Move SanParser::san_to_move(Board& board, std::string_view san)
         if (disambig_row != -1 && static_cast<int>(sq_from.row()) != disambig_row) continue;
 
         if ((expected_bb & sq_from.mask()) != 0ULL) {
-            return move;
+
+            // If we had already found a valid move, the notation is ambiguous
+            if (matched_move.is_valid()) {
+                return Move();
+            }
+            matched_move = move;
         }
     }
 
-    return Move();
+    return matched_move;
 }
